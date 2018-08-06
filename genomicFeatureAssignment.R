@@ -18,9 +18,6 @@ retrieveOrganoidSlices <- function(dir){
 }
 
 retrieveTrainingSet <- function(loaded_samples, gene_list, impute = FALSE, reference, res_dir){
-  target_samples <- load_samples(classes = c("T", "F", "M"), sampleList = "./resources/sampleList.csv")
-  
-  setwd("~/Git-Projects/Git-Research-Projects/FACETS_write_files/")
   matrix_training_set <- data.frame(stringsAsFactors = FALSE)
   for(sample in target_samples){
     print(sample)
@@ -41,19 +38,19 @@ retrieveTrainingSet <- function(loaded_samples, gene_list, impute = FALSE, refer
     matrix_training_set <- rbind(matrix_training_set, feature.entry)  
   }
   
-  # Impute NAs with column mean
-  if(impute == TRUE){
-    for(i in 1:ncol(matrix_training_set)){
-      matrix_training_set[is.na(matrix_training_set[,i]), i] <- median(matrix_training_set[,i], na.rm = TRUE)
-    }
+  # TODO: Impute NAs with column mean
+  for(i in 1:ncol(matrix_training_set)){
+    matrix_training_set[is.na(matrix_training_set[,i]), i] <- median(matrix_training_set[,i], na.rm = TRUE)
   }
   
+  
   melted_training_set <- do.call(rbind, lapply(seq(nrow(matrix_training_set)), function(index){
-    return(do.call(rbind, lapply(colnames(matrix_training_set[index, ]), function(coreId, index){
-      coreEntry <- data.frame(score = matrix_training_set[index, coreId], coreId = coreId, sampleId = rownames(matrix_training_set[index, ])[1])
-      return(coreEntry)
+    return(do.call(rbind, lapply(colnames(matrix_training_set[index, ]), function(featureId, index){
+      featureEntry <- data.frame(score = matrix_training_set[index, featureId], featureId = featureId, sampleId = rownames(matrix_training_set[index, ])[1])
+      return(featureEntry)
     }, index)))
   }))
+  
   
   return(list(melted=melted_training_set, matrix=matrix_training_set))
 }
@@ -75,7 +72,7 @@ attachLabelsToSet <- function(matrix_training_set, labelData){
 }
 
 visualizeUnclusteredHeatmap <- function(training_set){
-  ggplot(data = training_set, aes(x = coreId, y = sampleId)) + 
+  ggplot(data = training_set, aes(x = featureId, y = sampleId)) + 
     geom_tile(aes(fill = score), color = "white", size = 1) + 
     scale_fill_gradient2(low = "blue", mid="white", high = "tomato") + 
     xlab("core ID") + 
@@ -88,7 +85,7 @@ visualizeUnclusteredHeatmap <- function(training_set){
 
 clusterTrainingSet <- function(training_set, visualize = FALSE){
   # Unmelt training set for correlation analysis
-  training_set_matrix <- dcast(data = training_set,formula = sampleId~coreId,fun.aggregate = sum,value.var = "score")
+  training_set_matrix <- dcast(data = training_set,formula = sampleId~featureId,fun.aggregate = sum,value.var = "score")
   sampleIds <- training_set_matrix$sampleId
   training_set_matrix <- training_set_matrix[,-c(1)]
   training_set_matrix <- t(training_set_matrix)
@@ -103,7 +100,6 @@ clusterTrainingSet <- function(training_set, visualize = FALSE){
   }))
   training_set_matrix <- training_set_matrix[,c(nonzero_variance_samples)]
   
-  training_set_matrix <- training_set_matrix[complete.cases(training_set_matrix), ]
   # Calculate distance matrix
   corRaw <- cor(training_set_matrix)
   dissimilarity <- 1 - corRaw
