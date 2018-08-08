@@ -1,6 +1,9 @@
+setwd("~/Git-Projects/Git-Research-Projects/cn-ml-analysis/")
+source("featureMatrixAssignment.r")
+source("unsupervisedLearning.r")
 setwd("~/Git-Projects/Git-Research-Projects/gene-set-feature-scoring/")
 source("helperFunctions.R")
-source("genomicFeatureAssignment.R")
+
 
 gene_list <- read.table("./resources/genes_hg38.txt", sep = "\t", header = TRUE, stringsAsFactors = FALSE)
 gene_list <- gene_list[, c(7,8,9,3)]
@@ -12,9 +15,9 @@ res_dir <- "output/FACETS_Reference_hN30_8_2_18_1/" # Determine FACETS reference
 target_samples <- load_samples(classes = c("N","T", "F", "M"), sampleList = "./resources/sampleList.csv")
 target_samples <- target_samples[target_samples != reference]
 target_samples <- target_samples[target_samples != "hN32"]
-setwd("~/Git-Projects/Git-Research-Projects/FACETS_write_files/")
 
-training_set <- retrieveTrainingSet(target_samples, gene_list, impute = TRUE, reference, res_dir)
+setwd("~/Git-Projects/Git-Research-Projects/FACETS_write_files/")
+training_set <- retrieveGeneListTrainingSet(target_samples, gene_list, impute = TRUE, reference, res_dir)
 
 visualizeUnclusteredHeatmap(training_set$melted)
 hc <- clusterTrainingSet(training_set$melted, visualize = TRUE)
